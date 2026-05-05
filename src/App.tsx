@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { ArrowUp, MapPin, ChevronsRight, Code2, Palette, MonitorSmartphone, ArrowRight, Mail, Phone, Facebook, Instagram, Linkedin, CheckCircle } from 'lucide-react';
+import scotLogo from './assets/images/regenerated_image_1777995957471.png';
+import scarlettImage from './assets/images/regenerated_image_1777997652640.jpg';
 
 export default function App() {
   const isRunningRef = useRef(true);
@@ -196,6 +198,16 @@ export default function App() {
       if (e.target === this) closeMenu();
     });
 
+    const globalClickHandler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const t = target.closest('.nav-trigger');
+      if (t) {
+        const i = t.getAttribute('data-goto');
+        if (i !== null) goToPage(parseInt(i, 10));
+      }
+    };
+    document.addEventListener('click', globalClickHandler);
+
     typeWriterTimeoutId = setTimeout(typeWriter, 1200);
 
     // --- Desktop Scroll (Molette) ---
@@ -305,6 +317,7 @@ export default function App() {
       isRunningRef.current = false;
       cancelAnimationFrame(animationFrameId);
       clearTimeout(typeWriterTimeoutId);
+      document.removeEventListener('click', globalClickHandler);
       container.removeEventListener('wheel', wheelHandler);
       container.removeEventListener('touchstart', touchStartHandler);
       container.removeEventListener('touchmove', touchMoveHandler);
@@ -351,31 +364,31 @@ export default function App() {
       <div id="fullScreenMenu">
         <div className="text-center px-6">
           <div className="menu-item" data-delay="100">
-            <img src="https://z-cdn-media.chatglm.cn/files/8f981516-bb98-49bd-8921-e1a33fc11c99.png?auth_key=1877728789-2fed79002b1f4dac8afd97fa68ff4205-0-57ce83d604edb87654a0e484dedee039" alt="Logo" className="w-16 mx-auto" />
+            <img src={scotLogo} alt="Logo" className="w-16 mx-auto" />
           </div>
           <div className="menu-item mt-6" data-delay="180">
-            <p className="menu-sub mb-1">Couverture</p>
             <div className="menu-link" data-goto="0">L'Agence de Scott</div>
+            <p className="menu-sub">Couverture</p>
           </div>
           <div className="menu-item mt-4 md:mt-5" data-delay="260">
-            <p className="menu-sub mb-1">Premier Chapitre</p>
             <div className="menu-link" data-goto="1">Savoir-faire</div>
+            <p className="menu-sub">Premier Chapitre</p>
           </div>
           <div className="menu-item mt-4 md:mt-5" data-delay="340">
-            <p className="menu-sub mb-1">Deuxième Chapitre</p>
             <div className="menu-link" data-goto="2">L'Histoire</div>
+            <p className="menu-sub">Deuxième Chapitre</p>
           </div>
           <div className="menu-item mt-4 md:mt-5" data-delay="420">
-            <p className="menu-sub mb-1">Troisième Chapitre</p>
             <div className="menu-link" data-goto="3">Les Projets</div>
+            <p className="menu-sub">Troisième Chapitre</p>
           </div>
           <div className="menu-item mt-4 md:mt-5" data-delay="500">
-            <p className="menu-sub mb-1">Quatrième Chapitre</p>
             <div className="menu-link" data-goto="4">Zone d'intervention</div>
+            <p className="menu-sub">Quatrième Chapitre</p>
           </div>
           <div className="menu-item mt-4 md:mt-5" data-delay="580">
-            <p className="menu-sub mb-1">Dernier Chapitre</p>
             <div className="menu-link" data-goto="5">Contact</div>
+            <p className="menu-sub">Dernier Chapitre</p>
           </div>
         </div>
       </div>
@@ -392,8 +405,8 @@ export default function App() {
             <div className="gutter-shadow gutter-dark"></div>
             <div className="page-curl"></div>
             <div className="max-w-4xl mx-auto px-8 pl-14 md:pl-20 text-center relative">
-              <div className="reveal d1 mb-10"><img src="https://z-cdn-media.chatglm.cn/files/8f981516-bb98-49bd-8921-e1a33fc11c99.png?auth_key=1877728789-2fed79002b1f4dac8afd97fa68ff4205-0-57ce83d604edb87654a0e484dedee039" alt="L'Agence de Scott" className="w-40 md:w-52 mx-auto float" /></div>
-              <div className="reveal d2"><h1 className="font-serif text-5xl md:text-7xl lg:text-8xl tracking-tight mb-3 text-white drop-shadow-lg">L'Agence de <span className="text-orange-500">Scott</span></h1></div>
+              <div className="reveal d1 mb-10"><img src={scotLogo} alt="L'Agence de Scott" className="w-40 md:w-52 mx-auto float" /></div>
+              <div className="reveal d2"><h1 className="font-serif text-5xl md:text-7xl lg:text-8xl tracking-tight mb-3 text-white drop-shadow-lg">L'Agence de <span className="text-orange-500">Scott</span>.</h1></div>
               <div className="reveal d3"><p className="text-base md:text-lg font-light tracking-[0.35em] uppercase text-stone-300 mb-10 drop-shadow-md h-8"><span id="typewriter"></span><span id="typewriter-cursor"></span></p></div>
               <div className="reveal d4"><p className="text-stone-400 font-light text-sm flex items-center justify-center gap-2"><MapPin size={14} /> Saint-Amarin · Vallée de Thur · Haut-Rhin</p></div>
               <div className="reveal d6 mt-12">
@@ -437,6 +450,12 @@ export default function App() {
                   <p className="text-stone-600 font-light leading-relaxed text-sm">Dépannage, installation, conseils à domicile dans toute la vallée. Un accompagnement humain et de proximité.</p>
                   <div className="mt-6 flex flex-wrap gap-2"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">À domicile</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Installation</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Dépannage</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Conseil</span></div>
                 </div>
+              </div>
+              <div className="reveal d8 mt-16 flex justify-center">
+                <button className="nav-trigger inline-flex items-center gap-3 bg-orange-600 hover:bg-stone-900 text-white px-8 py-3.5 font-sans font-medium text-sm tracking-widest uppercase transition-colors duration-500 cursor-pointer" data-goto="5">
+                  Prendre contact
+                  <ArrowRight size={16} />
+                </button>
               </div>
             </div>
             <span className="absolute bottom-8 right-12 text-stone-300 font-serif text-sm">1</span>
@@ -492,30 +511,30 @@ export default function App() {
               <div className="reveal d3 mb-16">
                 <p className="text-lg font-light text-stone-500 max-w-xl">Chaque collaboration est une aventure. Voici quelques-unes des histoires que j'ai eu le plaisir d'écrire avec mes clients.</p>
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
-                <div className="project-card reveal d4" style={{ transform: 'rotate(-2deg)' }}>
-                  <div className="bg-white p-3 shadow-xl"><img src="https://picsum.photos/seed/restaurant-alsacien/600/450.jpg" alt="Auberge du Ballon" className="w-full h-48 object-cover" /></div>
-                  <div className="mt-4 px-1"><span className="text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-orange-600">Site Web</span><h3 className="font-serif text-xl mt-1 text-stone-900">Auberge du Ballon</h3><p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">Site vitrine pour un restaurant gastronomique de la vallée.</p></div>
+              <div className="grid sm:grid-cols-2 gap-x-10 lg:gap-x-16 gap-y-16 lg:gap-y-20">
+                <div className="project-card reveal d4">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src={scarlettImage} alt="L'atelier de Scarlett" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
+                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-orange-600">Site Web</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">L'atelier de Scarlett</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Site vitrine pour une créatrice en couture et broderie, à Saint-Amarin.</p></div>
                 </div>
-                <div className="project-card reveal d5" style={{ transform: 'rotate(1.5deg)' }}>
-                  <div className="bg-white p-3 shadow-xl"><img src="https://picsum.photos/seed/artisan-logo/600/450.jpg" alt="Fromagerie Stoffel" className="w-full h-48 object-cover" /></div>
-                  <div className="mt-4 px-1"><span className="text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span><h3 className="font-serif text-xl mt-1 text-stone-900">Fromagerie Stoffel</h3><p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">Identité visuelle complète&nbsp;: logo, packaging, cartes de visite.</p></div>
+                <div className="project-card reveal d5">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/artisan-logo/800/600.jpg" alt="Fromagerie Stoffel" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
+                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Fromagerie Stoffel</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Identité visuelle complète&nbsp;: logo, packaging, cartes de visite.</p></div>
                 </div>
-                <div className="project-card reveal d6" style={{ transform: 'rotate(-1deg)' }}>
-                  <div className="bg-white p-3 shadow-xl"><img src="https://picsum.photos/seed/tech-startup-web/600/450.jpg" alt="ValléeTech" className="w-full h-48 object-cover" /></div>
-                  <div className="mt-4 px-1"><span className="text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-blue-600">Application Web</span><h3 className="font-serif text-xl mt-1 text-stone-900">ValléeTech</h3><p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">Application de gestion pour un réseau d'entreprises locales.</p></div>
+                <div className="project-card reveal d6">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/tech-startup-web/800/600.jpg" alt="ValléeTech" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
+                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Application Web</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">ValléeTech</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Application de gestion pour un réseau d'entreprises locales.</p></div>
                 </div>
-                <div className="project-card reveal d7" style={{ transform: 'rotate(2deg)' }}>
-                  <div className="bg-white p-3 shadow-xl"><img src="https://picsum.photos/seed/mountain-gite/600/450.jpg" alt="Gîte du Markstein" className="w-full h-48 object-cover" /></div>
-                  <div className="mt-4 px-1"><span className="text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-orange-600">Web + Graphisme</span><h3 className="font-serif text-xl mt-1 text-stone-900">Gîte du Markstein</h3><p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">Refonte complète&nbsp;: site booking, charte graphique montagne.</p></div>
+                <div className="project-card reveal d7">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/mountain-gite/800/600.jpg" alt="Gîte du Markstein" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
+                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-orange-600">Web + Graphisme</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Gîte du Markstein</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Refonte complète&nbsp;: site booking, charte graphique montagne.</p></div>
                 </div>
-                <div className="project-card reveal d8" style={{ transform: 'rotate(-1.5deg)' }}>
-                  <div className="bg-white p-3 shadow-xl"><img src="https://picsum.photos/seed/mairie-digitale/600/450.jpg" alt="Mairie de Malmerspach" className="w-full h-48 object-cover" /></div>
-                  <div className="mt-4 px-1"><span className="text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-blue-600">Assistance</span><h3 className="font-serif text-xl mt-1 text-stone-900">Mairie de Malmerspach</h3><p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">Mise en réseau, installation, formation du personnel.</p></div>
+                <div className="project-card reveal d8">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/mairie-digitale/800/600.jpg" alt="Mairie de Malmerspach" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
+                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Assistance</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Mairie de Malmerspach</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Mise en réseau, installation, formation du personnel.</p></div>
                 </div>
-                <div className="project-card reveal d9" style={{ transform: 'rotate(1deg)' }}>
-                  <div className="bg-white p-3 shadow-xl"><img src="https://picsum.photos/seed/bakery-branding/600/450.jpg" alt="Boulangerie Linder" className="w-full h-48 object-cover" /></div>
-                  <div className="mt-4 px-1"><span className="text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span><h3 className="font-serif text-xl mt-1 text-stone-900">Boulangerie Linder</h3><p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">Nouvelle identité visuelle pour une boulangerie artisanale.</p></div>
+                <div className="project-card reveal d9">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/bakery-branding/800/600.jpg" alt="Boulangerie Linder" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
+                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Boulangerie Linder</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Nouvelle identité visuelle pour une boulangerie artisanale.</p></div>
                 </div>
               </div>
             </div>
