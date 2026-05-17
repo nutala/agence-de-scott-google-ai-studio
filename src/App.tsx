@@ -15,98 +15,15 @@ export default function App() {
 
     if (!container || !slider || !stb) return;
 
-    let targetScrollX = 0, currentScrollX = 0;
-    let targetScrollY = 0, currentScrollY = 0;
-    const ease = 0.12;
-    let lastActiveIndex = 0;
-    let isSnapping = false;
-    let activePageIndex = 0;
-    let lastKnownWidth = 0;
-
-    let animationFrameId: number;
-
-    function lerp(start: number, end: number, factor: number) {
-      return start + (end - start) * factor;
-    }
-
-    function shouldScrollVertically(scrollDelta: number, pageEl: HTMLElement | null) {
-      if (!pageEl || pageEl.scrollHeight <= pageEl.clientHeight + 5) return false;
-      const atTop = pageEl.scrollTop <= 1;
-      const atBottom = pageEl.scrollTop + pageEl.clientHeight >= pageEl.scrollHeight - 1;
-      if (scrollDelta > 0 && !atBottom) return true;
-      if (scrollDelta < 0 && !atTop) return true;
-      return false;
-    }
-
-    function animate() {
-      if (!isRunningRef.current) return;
-      if (!container || !slider) return;
-
-      const currentWidth = container.clientWidth;
-      if (currentWidth !== lastKnownWidth && currentWidth > 0) {
-        lastKnownWidth = currentWidth;
-        targetScrollX = activePageIndex * currentWidth;
-        currentScrollX = targetScrollX;
-        isSnapping = false;
-      }
-
-      const currentEase = isSnapping ? 0.25 : ease;
-      currentScrollX = lerp(currentScrollX, targetScrollX, currentEase);
-
-      if (Math.abs(currentScrollX - targetScrollX) < 1) {
-        currentScrollX = targetScrollX;
-        if (isSnapping) isSnapping = false;
-      }
-
-      slider.style.transform = 'translate3d(' + (-Math.round(currentScrollX)) + 'px, 0, 0)';
-
-      const safeWidth = currentWidth > 0 ? currentWidth : 1;
-      const activeIndex = Math.round(currentScrollX / safeWidth);
-      const activePage = document.getElementById('page-' + activeIndex);
-
-      if (activeIndex !== lastActiveIndex) {
-        lastActiveIndex = activeIndex;
-        if (activePage) {
-          targetScrollY = activePage.scrollTop;
-          currentScrollY = targetScrollY;
-          if (!activePage.classList.contains('page-enter')) {
-            activePage.classList.add('page-enter');
-            activePage.querySelectorAll('.reveal').forEach((el) => { el.classList.add('visible'); });
-          }
-        }
-        document.querySelectorAll('.nav-dot').forEach((d, j) => {
-          d.classList.toggle('active', j === activeIndex);
-        });
-      }
-
-      if (activePage && activePage.scrollHeight > activePage.clientHeight + 5) {
-        currentScrollY = lerp(currentScrollY, targetScrollY, Math.max(0.1, ease));
-        if (Math.abs(currentScrollY - targetScrollY) < 0.5) currentScrollY = targetScrollY;
-        activePage.scrollTop = currentScrollY;
-      }
-
-      const maxScroll = (totalPages - 1) * safeWidth;
-      const progress = maxScroll > 0 ? (currentScrollX / maxScroll) * 100 : 0;
-      const progressEl = document.getElementById('readingProgress');
-      if (progressEl) progressEl.style.width = progress + '%';
-      
-      if (stb) stb.classList.toggle('visible', safeWidth > 1 && currentScrollX > safeWidth * 0.5);
-
-      animationFrameId = requestAnimationFrame(animate);
-    }
-    animate();
-
-    function snapToPage(targetIndex: number) {
-      if (!container) return;
-      const pageWidth = container.clientWidth;
-      activePageIndex = Math.max(0, Math.min(targetIndex, totalPages - 1));
-      targetScrollX = activePageIndex * pageWidth;
-      isSnapping = true;
-    }
-
     // --- TYPEWRITER ---
     const typewriterElement = document.getElementById('typewriter');
-    const textToType = "SITES WEB · DESIGN · ASSISTANCE INFORMATIQUE";
+    const stringsToType = [
+      "SITES WEB SUR MESURE",
+      "DESIGN GRAPHIQUE",
+      "ASSISTANCE INFORMATIQUE",
+      "IDENTITÉ VISUELLE"
+    ];
+    let currentStringIndex = 0;
     let twIndex = 0;
     let isDeleting = false;
     let typeWriterTimeoutId: any;
@@ -114,26 +31,32 @@ export default function App() {
     function typeWriter() {
       if (!isRunningRef.current) return;
       if (!typewriterElement) return;
+      
+      const currentText = stringsToType[currentStringIndex];
+
       if (!isDeleting) {
-        typewriterElement.innerHTML = textToType.substring(0, twIndex + 1);
+        typewriterElement.innerHTML = currentText.substring(0, twIndex + 1);
         twIndex++;
-        if (twIndex === textToType.length) { 
+        if (twIndex === currentText.length) { 
           isDeleting = true; 
-          typeWriterTimeoutId = setTimeout(typeWriter, 2000); 
+          typeWriterTimeoutId = setTimeout(typeWriter, 2500); // Wait longer when word is complete
           return; 
         }
-        typeWriterTimeoutId = setTimeout(typeWriter, 90);
+        typeWriterTimeoutId = setTimeout(typeWriter, 70 + Math.random() * 40); // Natural random typing speed
       } else {
-        typewriterElement.innerHTML = textToType.substring(0, twIndex - 1);
+        typewriterElement.innerHTML = currentText.substring(0, twIndex - 1);
         twIndex--;
         if (twIndex === 0) { 
           isDeleting = false; 
-          typeWriterTimeoutId = setTimeout(typeWriter, 500); 
+          currentStringIndex = (currentStringIndex + 1) % stringsToType.length;
+          typeWriterTimeoutId = setTimeout(typeWriter, 400); 
           return; 
         }
-        typeWriterTimeoutId = setTimeout(typeWriter, 40);
+        typeWriterTimeoutId = setTimeout(typeWriter, 30); // Fast deletion
       }
     }
+
+    typeWriterTimeoutId = setTimeout(typeWriter, 1200);
 
     // --- MENU ---
     function openMenu() {
@@ -176,18 +99,25 @@ export default function App() {
 
     function goToPage(i: number) {
       closeMenu();
-      setTimeout(() => { snapToPage(i); targetScrollY = 0; }, 350);
+      const page = document.getElementById('page-' + i);
+      if (page) {
+        setTimeout(() => { 
+          page.scrollIntoView({ behavior: 'smooth' }); 
+        }, 350);
+      }
     }
 
     // --- INITIALIZE REVEALS ---
     const p0 = document.getElementById('page-0');
-    if (p0) p0.querySelectorAll('.reveal').forEach((el) => { el.classList.add('visible'); });
+    if (p0) {
+      p0.querySelectorAll('.reveal').forEach((el) => { el.classList.add('visible'); });
+      p0.classList.add('page-enter');
+    }
 
     const menuToggle = document.getElementById('menuToggle');
     if (menuToggle) menuToggle.addEventListener('click', toggleMenu);
     
-    const fullScreenMenu = document.getElementById('fullScreenMenu');
-    if (fullScreenMenu) fullScreenMenu.addEventListener('click', function (e) {
+    const fullScreenMenuClickHandler = function (e: MouseEvent) {
       const target = e.target as HTMLElement;
       const l = target.closest('.menu-link');
       if (l) { 
@@ -195,8 +125,10 @@ export default function App() {
         if (i !== null) goToPage(parseInt(i, 10)); 
         return; 
       }
-      if (e.target === this) closeMenu();
-    });
+      if (e.target === fullScreenMenu) closeMenu();
+    };
+    const fullScreenMenu = document.getElementById('fullScreenMenu');
+    if (fullScreenMenu) fullScreenMenu.addEventListener('click', fullScreenMenuClickHandler);
 
     const globalClickHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -208,124 +140,76 @@ export default function App() {
     };
     document.addEventListener('click', globalClickHandler);
 
-    typeWriterTimeoutId = setTimeout(typeWriter, 1200);
-
-    // --- Desktop Scroll (Molette) ---
-    const wheelHandler = (e: WheelEvent) => {
-      e.preventDefault();
-      if (isSnapping) return;
-
-      const safeWidth = container.clientWidth > 0 ? container.clientWidth : 1;
-      const activeIndex = Math.round(targetScrollX / safeWidth);
-      const pageEl = document.getElementById('page-' + activeIndex);
-      const scrollDelta = e.deltaY;
-
-      if (shouldScrollVertically(scrollDelta, pageEl)) {
-        targetScrollY += scrollDelta * 0.8;
-        if (pageEl) {
-          targetScrollY = Math.max(0, Math.min(targetScrollY, pageEl.scrollHeight - pageEl.clientHeight));
-        }
-      } else {
-        if (scrollDelta > 0) {
-          snapToPage(activeIndex + 1);
-        } else {
-          snapToPage(activeIndex - 1);
-        }
-      }
+    const stbClickHandler = () => { 
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
     };
-    container.addEventListener('wheel', wheelHandler, { passive: false });
-
-    // --- Mobile Scroll (Doigt) ---
-    let lastTouchY = 0;
-    let touchVelocity = 0;
-    let lastTouchTime = 0;
-    let touchStartPageIndex = 0;
-
-    const touchStartHandler = (e: TouchEvent) => {
-      lastTouchY = e.touches[0].clientY;
-      lastTouchTime = Date.now();
-      touchVelocity = 0;
-      touchStartPageIndex = activePageIndex;
-    };
-
-    const touchMoveHandler = (e: TouchEvent) => {
-      e.preventDefault();
-      const y = e.touches[0].clientY;
-      const now = Date.now();
-      const dragDelta = y - lastTouchY;
-      const deltaTime = now - lastTouchTime;
-      const scrollDelta = -dragDelta;
-
-      const safeWidth = container.clientWidth > 0 ? container.clientWidth : 1;
-      const activeIndex = Math.round(targetScrollX / safeWidth);
-      const pageEl = document.getElementById('page-' + activeIndex);
-
-      if (shouldScrollVertically(scrollDelta, pageEl)) {
-        targetScrollY += scrollDelta;
-        if (pageEl) {
-          targetScrollY = Math.max(0, Math.min(targetScrollY, pageEl.scrollHeight - pageEl.clientHeight));
-        }
-        touchVelocity = 0;
-      } else {
-        targetScrollX += scrollDelta;
-        const maxScroll = (totalPages - 1) * safeWidth;
-        targetScrollX = Math.max(0, Math.min(targetScrollX, maxScroll));
-        if (deltaTime > 0) touchVelocity = scrollDelta / deltaTime;
-      }
-
-      lastTouchY = y;
-      lastTouchTime = now;
-    };
-
-    const touchEndHandler = () => {
-      const inertiaDistance = touchVelocity * 150;
-      const finalTarget = targetScrollX + inertiaDistance;
-      let targetIndex = Math.round(finalTarget / (container.clientWidth > 0 ? container.clientWidth : 1));
-      targetIndex = Math.max(touchStartPageIndex - 1, Math.min(touchStartPageIndex + 1, targetIndex));
-      snapToPage(targetIndex);
-    };
-
-    container.addEventListener('touchstart', touchStartHandler, { passive: true });
-    container.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    container.addEventListener('touchend', touchEndHandler);
-
-    // --- Flèches clavier ---
-    const keydownHandler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        snapToPage(activePageIndex + 1);
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        snapToPage(activePageIndex - 1);
-      }
-    };
-    document.addEventListener('keydown', keydownHandler);
-
-    const stbClickHandler = () => { snapToPage(0); targetScrollY = 0; };
     stb.addEventListener('click', stbClickHandler);
 
     const navDots = document.querySelectorAll('.nav-dot');
     const navDotClickHandlers: { el: Element, fn: EventListener }[] = [];
     navDots.forEach((d) => {
       const fn = () => {
-        snapToPage(parseInt(d.getAttribute('data-idx') || '0', 10));
-        targetScrollY = 0;
+        const idxStr = d.getAttribute('data-idx');
+        if (idxStr !== null) {
+          goToPage(parseInt(idxStr, 10));
+        }
       };
       d.addEventListener('click', fn);
       navDotClickHandlers.push({ el: d, fn });
     });
 
+    // --- INTERSECTION OBSERVER ---
+    const pages = document.querySelectorAll('.book-page');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const idx = entry.target.getAttribute('data-idx');
+        if (entry.isIntersecting) {
+          entry.target.classList.add('page-enter');
+          entry.target.querySelectorAll('.reveal').forEach((el) => {
+             el.classList.add('visible');
+          });
+          
+          navDots.forEach((d) => {
+            if (d.getAttribute('data-idx') === idx) {
+              d.classList.add('active');
+            } else {
+              d.classList.remove('active');
+            }
+          });
+        } else {
+          // Reset animation so it replays next time
+          entry.target.classList.remove('page-enter');
+          entry.target.querySelectorAll('.reveal').forEach((el) => {
+             el.classList.remove('visible');
+          });
+        }
+      });
+    }, { threshold: 0.15 });
+
+    pages.forEach((page) => observer.observe(page));
+
+    // --- SCROLL DROPS ---
+    const handleGlobalScroll = () => {
+      const scrollY = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+      const progressEl = document.getElementById('readingProgress');
+      if (progressEl) progressEl.style.width = progress + '%';
+      
+      if (stb) stb.classList.toggle('visible', scrollY > window.innerHeight * 0.5);
+    };
+    window.addEventListener('scroll', handleGlobalScroll);
+
     return () => {
       isRunningRef.current = false;
-      cancelAnimationFrame(animationFrameId);
       clearTimeout(typeWriterTimeoutId);
       document.removeEventListener('click', globalClickHandler);
-      container.removeEventListener('wheel', wheelHandler);
-      container.removeEventListener('touchstart', touchStartHandler);
-      container.removeEventListener('touchmove', touchMoveHandler);
-      container.removeEventListener('touchend', touchEndHandler);
-      document.removeEventListener('keydown', keydownHandler);
       stb.removeEventListener('click', stbClickHandler);
+      window.removeEventListener('scroll', handleGlobalScroll);
       navDotClickHandlers.forEach(({el, fn}) => el.removeEventListener('click', fn));
       if (menuToggle) menuToggle.removeEventListener('click', toggleMenu);
+      if (fullScreenMenu) fullScreenMenu.removeEventListener('click', fullScreenMenuClickHandler);
+      observer.disconnect();
     };
   }, []);
 
@@ -394,10 +278,10 @@ export default function App() {
       </div>
 
       <div id="book-container">
-        <div id="book-slider">
+        <div id="book-slider" className="flex flex-col">
 
           {/* PAGE 0 — COVER */}
-          <section id="page-0" className="book-page flex items-center justify-center overflow-hidden" data-idx="0">
+          <section id="page-0" className="book-page min-h-screen relative flex flex-col justify-center overflow-hidden" data-idx="0">
             <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
               <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260331_074327_a4d6275d-82d9-4c83-bfbe-f1fb2213c17c.mp4" />
             </video>
@@ -405,19 +289,24 @@ export default function App() {
             <div className="gutter-shadow gutter-dark"></div>
             <div className="page-curl"></div>
             <div className="max-w-4xl mx-auto px-8 pl-14 md:pl-20 text-center relative">
-              <div className="reveal d1 mb-10"><img src={scotLogo} alt="L'Agence de Scott" className="w-40 md:w-52 mx-auto float" /></div>
+              <div className="reveal d1 mb-10"><img src={scotLogo} alt="L'Agence de Scott" className="w-40 md:w-48 mx-auto float drop-shadow-2xl" /></div>
               <div className="reveal d2"><h1 className="font-serif text-5xl md:text-7xl lg:text-8xl tracking-tight mb-3 text-white drop-shadow-lg">L'Agence de <span className="text-orange-500">Scott</span>.</h1></div>
-              <div className="reveal d3"><p className="text-base md:text-lg font-light tracking-[0.35em] uppercase text-stone-300 mb-10 drop-shadow-md h-8"><span id="typewriter"></span><span id="typewriter-cursor"></span></p></div>
-              <div className="reveal d4"><p className="text-stone-400 font-light text-sm flex items-center justify-center gap-2"><MapPin size={14} /> Saint-Amarin · Vallée de Thur · Haut-Rhin</p></div>
-              <div className="reveal d6 mt-12">
-                <div className="scroll-hint flex items-center justify-center gap-2 text-stone-400"><span className="text-[0.65rem] tracking-[0.25em] uppercase">Scroller pour tourner la page</span><ChevronsRight size={22} /></div>
+              <div className="reveal d3"><p className="text-sm md:text-base font-light tracking-[0.35em] uppercase text-stone-300 mb-10 drop-shadow-md h-8"><span id="typewriter"></span><span id="typewriter-cursor"></span></p></div>
+              <div className="reveal d4"><p className="inline-flex items-center justify-center gap-2 text-stone-300 font-light text-xs md:text-sm border border-stone-500/30 bg-stone-900/30 backdrop-blur-sm px-5 py-2.5 rounded-full"><MapPin size={14} className="text-orange-500" /> Saint-Amarin · Vallée de Thur · Haut-Rhin</p></div>
+              <div className="reveal d6 mt-16">
+                <div className="scroll-hint flex flex-col items-center justify-center gap-2 text-stone-400">
+                  <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">Scroller pour découvrir</span>
+                  <div className="w-6 h-10 border-2 border-stone-400/50 rounded-full flex justify-center pt-2 mt-2">
+                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce"></div>
+                  </div>
+                </div>
               </div>
             </div>
-            <span className="absolute bottom-8 right-12 text-stone-500 font-serif text-sm italic">i</span>
+            <span className="hidden">1</span>
           </section>
 
           {/* PAGE 1 — LES SAVOIR-FAIRE */}
-          <section id="page-1" className="book-page paper-light text-stone-800" data-idx="1">
+          <section id="page-1" className="book-page min-h-screen paper-light text-stone-800" data-idx="1">
             <div className="page-shadow-overlay"></div>
             <div className="gutter-shadow gutter-light"></div>
             <div className="page-curl"></div>
@@ -429,26 +318,26 @@ export default function App() {
                 <div className="w-14 h-[2px] bg-orange-500 mt-5"></div>
               </div>
               <div className="grid md:grid-cols-3 gap-8">
-                <div className="svc-card reveal d3 bg-white border border-stone-200 p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-orange-500/5 rounded-bl-full"></div>
-                  <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6"><Code2 size={28} className="text-orange-500" /></div>
-                  <h3 className="font-serif text-2xl mb-4 text-stone-900">Développement Web</h3>
-                  <p className="text-stone-600 font-light leading-relaxed text-sm">Sites vitrines, e-commerce, applications sur mesure. Un code propre, performant, pensé pour vos utilisateurs.</p>
-                  <div className="mt-6 flex flex-wrap gap-2"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">HTML / CSS</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">JavaScript</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">CMS</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Responsive</span></div>
+                <div className="svc-card reveal d3 bg-white border border-stone-200 p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-28 h-28 bg-orange-500/5 rounded-bl-full transition-transform duration-500 group-hover:scale-150 group-hover:bg-orange-500/10"></div>
+                  <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6 relative z-10 transition-transform duration-500 group-hover:-translate-y-2"><Code2 size={28} className="text-orange-500" /></div>
+                  <h3 className="font-serif text-2xl mb-4 text-stone-900 relative z-10">Développement Web</h3>
+                  <p className="text-stone-600 font-light leading-relaxed text-sm relative z-10">Sites vitrines, e-commerce, applications sur mesure. Un code propre, performant, pensé pour vos utilisateurs.</p>
+                  <div className="mt-6 flex flex-wrap gap-2 relative z-10"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">HTML / CSS</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">JavaScript</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">CMS</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Responsive</span></div>
                 </div>
-                <div className="svc-card reveal d5 bg-white border border-stone-200 p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-teal-500/5 rounded-bl-full"></div>
-                  <div className="w-14 h-14 bg-teal-500/10 rounded-xl flex items-center justify-center mb-6"><Palette size={28} className="text-teal-600" /></div>
-                  <h3 className="font-serif text-2xl mb-4 text-stone-900">Graphisme</h3>
-                  <p className="text-stone-600 font-light leading-relaxed text-sm">Identité visuelle, logos, supports print &amp; digital. Un design qui raconte votre histoire et marque les esprits.</p>
-                  <div className="mt-6 flex flex-wrap gap-2"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Logo</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Charte graphique</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Print</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">UI / UX</span></div>
+                <div className="svc-card reveal d5 bg-white border border-stone-200 p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-28 h-28 bg-teal-500/5 rounded-bl-full transition-transform duration-500 group-hover:scale-150 group-hover:bg-teal-500/10"></div>
+                  <div className="w-14 h-14 bg-teal-500/10 rounded-xl flex items-center justify-center mb-6 relative z-10 transition-transform duration-500 group-hover:-translate-y-2"><Palette size={28} className="text-teal-600" /></div>
+                  <h3 className="font-serif text-2xl mb-4 text-stone-900 relative z-10">Graphisme</h3>
+                  <p className="text-stone-600 font-light leading-relaxed text-sm relative z-10">Identité visuelle, logos, supports print &amp; digital. Un design qui raconte votre histoire et marque les esprits.</p>
+                  <div className="mt-6 flex flex-wrap gap-2 relative z-10"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Logo</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Charte graphique</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Print</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">UI / UX</span></div>
                 </div>
-                <div className="svc-card reveal d7 bg-white border border-stone-200 p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/5 rounded-bl-full"></div>
-                  <div className="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6"><MonitorSmartphone size={28} className="text-blue-600" /></div>
-                  <h3 className="font-serif text-2xl mb-4 text-stone-900">Assistance Informatique</h3>
-                  <p className="text-stone-600 font-light leading-relaxed text-sm">Dépannage, installation, conseils à domicile dans toute la vallée. Un accompagnement humain et de proximité.</p>
-                  <div className="mt-6 flex flex-wrap gap-2"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">À domicile</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Installation</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Dépannage</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600">Conseil</span></div>
+                <div className="svc-card reveal d7 bg-white border border-stone-200 p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/5 rounded-bl-full transition-transform duration-500 group-hover:scale-150 group-hover:bg-blue-500/10"></div>
+                  <div className="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 relative z-10 transition-transform duration-500 group-hover:-translate-y-2"><MonitorSmartphone size={28} className="text-blue-600" /></div>
+                  <h3 className="font-serif text-2xl mb-4 text-stone-900 relative z-10">Assistance Informatique</h3>
+                  <p className="text-stone-600 font-light leading-relaxed text-sm relative z-10">Dépannage, installation, conseils à domicile dans toute la vallée. Un accompagnement humain et de proximité.</p>
+                  <div className="mt-6 flex flex-wrap gap-2 relative z-10"><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">À domicile</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Installation</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Dépannage</span><span className="text-[0.65rem] bg-stone-100 px-2 py-1 rounded text-stone-600 border border-stone-200">Conseil</span></div>
                 </div>
               </div>
               <div className="reveal d8 mt-16 flex justify-center">
@@ -462,7 +351,7 @@ export default function App() {
           </section>
 
           {/* PAGE 2 — L'HISTOIRE */}
-          <section id="page-2" className="book-page paper-dark text-stone-100" data-idx="2">
+          <section id="page-2" className="book-page min-h-screen paper-dark text-stone-100" data-idx="2">
             <div className="page-shadow-overlay"></div>
             <div className="gutter-shadow gutter-dark"></div>
             <div className="chapter-watermark" style={{ color: 'rgba(232,119,34,0.04)' }}>II</div>
@@ -474,10 +363,11 @@ export default function App() {
               </div>
               <div className="grid md:grid-cols-5 gap-12 items-start">
                 <div className="md:col-span-2 flex flex-col items-center reveal d3">
-                  <div className="portrait-frame w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64">
-                    <img src="https://z-cdn-media.chatglm.cn/files/f731fbcd-8db4-4fac-a91c-0b2413d779ce.png?auth_key=1877729329-7b6a01a972de4c7d9a05ee9c8dc80c62-0-16fa48133f75d4c43d56d6d29dbb51f1" alt="Jordan Schmidt" className="w-full h-full object-cover rounded-full border-[5px] border-stone-800 shadow-xl" />
+                  <div className="portrait-frame w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 relative group">
+                    <div className="absolute inset-0 bg-orange-500 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700"></div>
+                    <img loading="lazy" src="https://z-cdn-media.chatglm.cn/files/f731fbcd-8db4-4fac-a91c-0b2413d779ce.png?auth_key=1877729329-7b6a01a972de4c7d9a05ee9c8dc80c62-0-16fa48133f75d4c43d56d6d29dbb51f1" alt="Jordan Schmidt" className="w-full h-full object-cover rounded-full border-[6px] border-stone-800 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative z-10 transition-transform duration-700 group-hover:scale-105 group-hover:rotate-2" />
                   </div>
-                  <div className="mt-5 text-center">
+                  <div className="mt-8 text-center">
                     <p className="font-serif text-xl text-stone-100">Jordan Schmidt</p>
                     <p className="text-stone-400 text-xs font-light tracking-wider mt-1">Fondateur</p>
                   </div>
@@ -493,11 +383,11 @@ export default function App() {
                 </div>
               </div>
             </div>
-            <span className="absolute bottom-8 right-12 text-stone-700 font-serif text-sm">2</span>
+            <span className="hidden">3</span>
           </section>
 
           {/* PAGE 3 — LES PROJETS */}
-          <section id="page-3" className="book-page paper-light text-stone-800" data-idx="3">
+          <section id="page-3" className="book-page min-h-screen paper-light text-stone-800" data-idx="3">
             <div className="page-shadow-overlay"></div>
             <div className="gutter-shadow gutter-light"></div>
             <div className="page-curl"></div>
@@ -509,32 +399,86 @@ export default function App() {
                 <div className="w-14 h-[2px] bg-orange-500 mt-5"></div>
               </div>
               <div className="reveal d3 mb-16">
-                <p className="text-lg font-light text-stone-500 max-w-xl">Chaque collaboration est une aventure. Voici quelques-unes des histoires que j'ai eu le plaisir d'écrire avec mes clients.</p>
+                <p className="text-lg md:text-xl font-light text-stone-600 max-w-2xl leading-relaxed">Chaque collaboration est une aventure. Voici quelques-unes des histoires que j'ai eu le plaisir d'écrire avec mes clients.</p>
               </div>
               <div className="grid sm:grid-cols-2 gap-x-10 lg:gap-x-16 gap-y-16 lg:gap-y-20">
-                <div className="project-card reveal d4">
-                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src={scarlettImage} alt="L'atelier de Scarlett" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
-                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-orange-600">Site Web</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">L'atelier de Scarlett</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Site vitrine pour une créatrice en couture et broderie, à Saint-Amarin.</p></div>
+                <a href="https://latelierdescarlett.fr" target="_blank" rel="noopener noreferrer" className="project-card reveal d4 block cursor-pointer group">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl overflow-hidden relative">
+                    <img loading="lazy" src={scarlettImage} alt="L'atelier de Scarlett" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50 transition-transform duration-700 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-5 px-1">
+                    <span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-orange-600">Site Web</span>
+                    <h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900 flex items-center justify-between">
+                      L'atelier de Scarlett
+                      <ArrowRight className="text-orange-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                    </h3>
+                    <p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Site vitrine pour une créatrice en couture et broderie, à Saint-Amarin.</p>
+                  </div>
+                </a>
+                <div className="project-card reveal d5 group cursor-pointer">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl overflow-hidden relative">
+                    <img loading="lazy" src="https://picsum.photos/seed/artisan-logo/800/600.jpg" alt="Fromagerie Stoffel" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50 transition-transform duration-700 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-5 px-1">
+                    <span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span>
+                    <h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900 flex items-center justify-between">
+                      Fromagerie Stoffel
+                      <ArrowRight className="text-teal-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                    </h3>
+                    <p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Identité visuelle complète&nbsp;: logo, packaging, cartes de visite.</p>
+                  </div>
                 </div>
-                <div className="project-card reveal d5">
-                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/artisan-logo/800/600.jpg" alt="Fromagerie Stoffel" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
-                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Fromagerie Stoffel</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Identité visuelle complète&nbsp;: logo, packaging, cartes de visite.</p></div>
+                <div className="project-card reveal d6 group cursor-pointer">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl overflow-hidden relative">
+                    <img loading="lazy" src="https://picsum.photos/seed/tech-startup-web/800/600.jpg" alt="ValléeTech" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50 transition-transform duration-700 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-5 px-1">
+                    <span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Application Web</span>
+                    <h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900 flex items-center justify-between">
+                      ValléeTech
+                      <ArrowRight className="text-blue-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                    </h3>
+                    <p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Application de gestion pour un réseau d'entreprises locales.</p>
+                  </div>
                 </div>
-                <div className="project-card reveal d6">
-                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/tech-startup-web/800/600.jpg" alt="ValléeTech" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
-                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Application Web</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">ValléeTech</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Application de gestion pour un réseau d'entreprises locales.</p></div>
+                <div className="project-card reveal d7 group cursor-pointer">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl overflow-hidden relative">
+                    <img loading="lazy" src="https://picsum.photos/seed/mountain-gite/800/600.jpg" alt="Gîte du Markstein" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50 transition-transform duration-700 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-5 px-1">
+                    <span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-orange-600">Web + Graphisme</span>
+                    <h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900 flex items-center justify-between">
+                      Gîte du Markstein
+                      <ArrowRight className="text-orange-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                    </h3>
+                    <p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Refonte complète&nbsp;: site booking, charte graphique montagne.</p>
+                  </div>
                 </div>
-                <div className="project-card reveal d7">
-                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/mountain-gite/800/600.jpg" alt="Gîte du Markstein" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
-                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-orange-600">Web + Graphisme</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Gîte du Markstein</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Refonte complète&nbsp;: site booking, charte graphique montagne.</p></div>
+                <div className="project-card reveal d8 group cursor-pointer">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl overflow-hidden relative">
+                    <img loading="lazy" src="https://picsum.photos/seed/mairie-digitale/800/600.jpg" alt="Mairie de Malmerspach" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50 transition-transform duration-700 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-5 px-1">
+                    <span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Assistance</span>
+                    <h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900 flex items-center justify-between">
+                      Mairie de Malmerspach
+                      <ArrowRight className="text-blue-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                    </h3>
+                    <p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Mise en réseau, installation, formation du personnel.</p>
+                  </div>
                 </div>
-                <div className="project-card reveal d8">
-                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/mairie-digitale/800/600.jpg" alt="Mairie de Malmerspach" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
-                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Assistance</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Mairie de Malmerspach</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Mise en réseau, installation, formation du personnel.</p></div>
-                </div>
-                <div className="project-card reveal d9">
-                  <div className="bg-white p-3 lg:p-4 shadow-xl"><img src="https://picsum.photos/seed/bakery-branding/800/600.jpg" alt="Boulangerie Linder" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50" /></div>
-                  <div className="mt-5 px-1"><span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span><h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900">Boulangerie Linder</h3><p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Nouvelle identité visuelle pour une boulangerie artisanale.</p></div>
+                <div className="project-card reveal d9 group cursor-pointer">
+                  <div className="bg-white p-3 lg:p-4 shadow-xl overflow-hidden relative">
+                    <img loading="lazy" src="https://picsum.photos/seed/bakery-branding/800/600.jpg" alt="Boulangerie Linder" className="w-full h-56 md:h-72 lg:h-80 object-contain bg-stone-50 transition-transform duration-700 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-5 px-1">
+                    <span className="text-[0.65rem] lg:text-xs font-semibold tracking-[0.2em] uppercase text-teal-600">Graphisme</span>
+                    <h3 className="font-serif text-2xl lg:text-3xl mt-2 text-stone-900 flex items-center justify-between">
+                      Boulangerie Linder
+                      <ArrowRight className="text-teal-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                    </h3>
+                    <p className="text-stone-500 text-sm lg:text-base font-light mt-2.5 leading-relaxed">Nouvelle identité visuelle pour une boulangerie artisanale.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -542,7 +486,7 @@ export default function App() {
           </section>
 
           {/* PAGE 4 — ZONE D'INTERVENTION */}
-          <section id="page-4" className="book-page paper-dark" data-idx="4">
+          <section id="page-4" className="book-page min-h-screen paper-dark" data-idx="4">
             <div className="page-shadow-overlay"></div>
             <div className="gutter-shadow gutter-dark"></div>
             <div className="chapter-watermark" style={{ color: 'rgba(232,119,34,0.04)' }}>IV</div>
@@ -554,9 +498,11 @@ export default function App() {
               </div>
               <div className="grid md:grid-cols-2 gap-12 items-center">
                 <div className="reveal d3">
-                  <div className="relative">
-                    <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=700&h=550" alt="Bureau et digital" className="w-full h-72 md:h-[28rem] object-cover shadow-2xl" style={{ border: '8px solid #292524', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }} />
-                    <div className="absolute -bottom-4 -right-4 bg-orange-500 text-white px-5 py-2.5 font-serif text-lg shadow-lg">De la vallée au bout du monde</div>
+                  <div className="relative group" style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+                    <div className="overflow-hidden relative" style={{ border: '8px solid #292524' }}>
+                      <img loading="lazy" src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=700&h=550" alt="Bureau et digital" className="w-full h-72 md:h-[28rem] object-cover shadow-2xl transition-transform duration-1000 group-hover:scale-110" />
+                    </div>
+                    <div className="absolute -bottom-4 -right-4 bg-orange-500 text-white px-5 py-2.5 font-serif text-lg shadow-lg transition-transform duration-700 group-hover:-translate-y-2 group-hover:-translate-x-2 z-10">De la vallée au bout du monde</div>
                   </div>
                 </div>
                 <div className="space-y-6">
@@ -570,11 +516,11 @@ export default function App() {
                 </div>
               </div>
             </div>
-            <span className="absolute bottom-8 right-12 text-stone-700 font-serif text-sm">4</span>
+            <span className="hidden">5</span>
           </section>
 
           {/* PAGE 5 — CONTACT */}
-          <section id="page-5" className="book-page paper-light text-stone-800" data-idx="5">
+          <section id="page-5" className="book-page min-h-screen paper-light text-stone-800" data-idx="5">
             <div className="page-shadow-overlay"></div>
             <div className="gutter-shadow gutter-light"></div>
             <div className="page-curl"></div>
@@ -586,7 +532,7 @@ export default function App() {
                 <div className="w-14 h-[2px] bg-orange-500 mt-5"></div>
               </div>
               <div className="reveal d3 mb-14">
-                <p className="text-lg md:text-xl font-light text-stone-500 max-w-xl">Votre histoire commence ici. Parlez-moi de votre projet, et ensemble, écrivons le prochain chapitre.</p>
+                <p className="text-lg md:text-xl font-light text-stone-600 max-w-2xl leading-relaxed">Votre histoire commence ici. Parlez-moi de votre projet, et ensemble, écrivons le prochain chapitre.</p>
               </div>
               <form className="space-y-6 max-w-xl reveal d4" onSubmit={handleSubmit}>
                 <div className="grid md:grid-cols-2 gap-6">
@@ -613,7 +559,7 @@ export default function App() {
                   <label className="block text-[0.65rem] font-semibold tracking-[0.2em] uppercase text-stone-500 mb-2">Message</label>
                   <textarea rows={5} required placeholder="Racontez-moi votre projet…" className="w-full bg-white border border-stone-300 px-4 py-3 text-stone-900 placeholder-stone-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition resize-none text-sm"></textarea>
                 </div>
-                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 tracking-wider uppercase text-xs transition-all duration-300 flex items-center gap-2 group">
+                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 tracking-wider uppercase text-xs transition-all duration-300 flex items-center gap-3 group shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 rounded-sm">
                   Envoyer le message<ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
               </form>
@@ -627,25 +573,32 @@ export default function App() {
                 <div className="flex items-start gap-3"><Mail size={18} className="text-orange-500 mt-0.5 shrink-0" />
                   <div>
                     <h4 className="font-medium text-sm mb-1 text-stone-900">Email</h4>
-                    <p className="text-stone-500 text-sm font-light">contact@agencedescott.fr</p>
+                    <a href="mailto:contact@agencedescott.fr" className="text-stone-500 text-sm font-light hover:text-orange-600 transition">contact@agencedescott.fr</a>
                   </div>
                 </div>
-                <div className="flex items-start gap-3"><Phone size={18} className="text-orange-500 mt-0.5 shrink-0" />
-                  <div>
-                    <h4 className="font-medium text-sm mb-1 text-stone-900">Téléphone</h4>
-                    <p className="text-stone-500 text-sm font-light">Sur demande</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-4">
+                    <a href="https://facebook.com/agencedescott" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-orange-50 hover:text-orange-600 transition duration-300">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                    </a>
+                    <a href="https://instagram.com/agencedescott" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-orange-50 hover:text-orange-600 transition duration-300">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                    </a>
+                    <a href="https://linkedin.com/company/agencedescott" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-orange-50 hover:text-orange-600 transition duration-300">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                    </a>
                   </div>
                 </div>
               </div>
-              <div className="reveal d7 mt-10 flex items-center gap-3">
-                <a href="#" className="w-10 h-10 border border-stone-300 flex items-center justify-center text-stone-500 hover:border-orange-500 hover:text-orange-500 transition-colors"><Facebook size={17} /></a>
-                <a href="#" className="w-10 h-10 border border-stone-300 flex items-center justify-center text-stone-500 hover:border-orange-500 hover:text-orange-500 transition-colors"><Instagram size={17} /></a>
-                <a href="#" className="w-10 h-10 border border-stone-300 flex items-center justify-center text-stone-500 hover:border-orange-500 hover:text-orange-500 transition-colors"><Linkedin size={17} /></a>
-              </div>
-              <div className="mt-auto pt-12 border-t border-stone-200 flex justify-between items-center">
-                <p className="text-stone-400 text-xs font-light">© 2025 L'Agence de Scott — Tous droits réservés</p>
-                <p className="text-stone-300 font-serif text-sm">5</p>
-              </div>
+              <footer className="mt-20 pt-12 border-t border-stone-200">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                  <p className="text-stone-400 text-xs font-light tracking-wide">&copy; {new Date().getFullYear()} L'Agence de Scott — Tous droits réservés.</p>
+                  <p className="text-stone-400 text-xs font-light tracking-wide text-center md:text-right">
+                    Design & Développement par <span className="text-stone-600 font-medium">Jordan Schmidt</span>.
+                  </p>
+                  <p className="text-stone-300 font-serif text-sm">V</p>
+                </div>
+              </footer>
             </div>
           </section>
 
